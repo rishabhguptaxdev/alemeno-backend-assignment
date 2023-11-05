@@ -15,7 +15,15 @@ database_ready
 
 # Run Prisma migrations
 echo "Running Prisma migrations..."
-npx prisma migrate dev --name init
+# npx prisma migrate dev --name init
+
+# Generate Prisma Client
+echo "Generating Prisma Client..."
+npx prisma generate
+
+# Run Prisma migrations
+echo "Running Prisma migrations..."
+npx prisma migrate deploy
 
 # Start the application
 echo "Starting the application..."

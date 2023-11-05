@@ -16,5 +16,7 @@ RUN apt-get update && apt-get install -y default-mysql-client
 # Copy the rest of the application files
 COPY . .
 
+EXPOSE 5000
+
 # Set the entrypoint
 CMD ["./entrypoint.sh"]

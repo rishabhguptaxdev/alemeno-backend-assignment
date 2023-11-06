@@ -167,7 +167,7 @@ const createLoan = BigPromise(async (req, res, next) => {
   }
 });
 
-const viewLoanDetails = BigPromise(async (req, res, next) => {
+const viewLoanById = BigPromise(async (req, res, next) => {
   try {
     const loanId = req.params.loan_id;
 
@@ -256,4 +256,48 @@ const makePayment = BigPromise(async (req, res, next) => {
   }
 });
 
-module.exports = { checkEligibility, createLoan, viewLoanDetails, makePayment };
+const viewLoanStatement = BigPromise(async (req, res, next) => {
+  try {
+    const { customer_id, loan_id } = req.params;
+
+    const loan = await prisma.loan.findFirst({
+      where: {
+        AND: [
+          { loan_id: parseInt(loan_id) },
+          { customer_id: parseInt(customer_id) },
+        ],
+      },
+    });
+
+    if (!loan) {
+      return next(new CustomError("Loan not found for this customer", 404));
+    }
+
+    // Finding number of repayments left
+    const repaymentsLeft = loan.tenure - loan.emis_paid_on_time;
+
+    // Prepare the response data
+    const loanItem = {
+      customer_id: loan.customer_id,
+      loan_id: loan.loan_id,
+      principal: loan.loan_amount,
+      interest_rate: loan.interest_rate,
+      amount_paid: loan.total_amount_paid,
+      monthly_installment: loan.monthly_repayment,
+      repayments_left: repaymentsLeft,
+    };
+
+    res.status(200).json(loanItem);
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+module.exports = {
+  checkEligibility,
+  createLoan,
+  viewLoanById,
+  makePayment,
+  viewLoanStatement,
+};

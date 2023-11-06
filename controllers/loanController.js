@@ -165,4 +165,47 @@ const createLoan = BigPromise(async (req, res, next) => {
   }
 });
 
-module.exports = { checkEligibility, createLoan };
+const viewLoanDetails = BigPromise(async (req, res, next) => {
+  try {
+    const loanId = req.params.loan_id;
+
+    // Fetch the loan details including the associated user information
+    const loan = await prisma.loan.findUnique({
+      where: { loan_id: parseInt(loanId) },
+      include: {
+        user: {
+          select: {
+            customer_id: true,
+            first_name: true,
+            last_name: true,
+            phone_number: true,
+            age: true,
+          },
+        },
+      },
+    });
+
+    if (!loan) {
+      return next(new CustomError("Loan not found", 404));
+    }
+
+    const loanDetails = {
+      loan_id: loan.loan_id,
+      customer: {
+        ...loan.user,
+        phone_number: loan.user.phone_number.toString(),
+      },
+      loan_amount: loan.loan_amount,
+      interest_rate: loan.interest_rate,
+      monthly_installment: loan.monthly_repayment,
+      tenure: loan.tenure,
+    };
+
+    res.status(200).json(loanDetails);
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+module.exports = { checkEligibility, createLoan, viewLoanDetails };

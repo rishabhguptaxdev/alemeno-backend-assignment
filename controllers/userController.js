@@ -1,7 +1,8 @@
 const BigPromise = require("../middlewares/bigPromise");
 const prisma = require("../prisma/prismaClient");
+const CustomError = require("../utils/customErrors");
 
-exports.register = BigPromise(async (req, res) => {
+exports.register = BigPromise(async (req, res, next) => {
   const { first_name, last_name, age, phone_number, monthly_salary } = req.body;
 
   if (!first_name || !last_name || !age || !phone_number || !monthly_salary) {

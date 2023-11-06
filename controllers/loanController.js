@@ -131,6 +131,8 @@ const createLoan = BigPromise(async (req, res, next) => {
           tenure,
           monthly_repayment: checkEligibilityResponse.monthly_installment,
           emis_paid_on_time: 0,
+          amount_with_interest:
+            checkEligibilityResponse.monthly_installment * tenure,
           start_date: new Date(),
           end_date: end,
         },
@@ -208,4 +210,50 @@ const viewLoanDetails = BigPromise(async (req, res, next) => {
   }
 });
 
-module.exports = { checkEligibility, createLoan, viewLoanDetails };
+const makePayment = BigPromise(async (req, res, next) => {
+  try {
+    const { customer_id, loan_id } = req.params;
+    const { paid_amount } = req.body;
+
+    // Fetch the loan details and include user information
+    const loan = await prisma.loan.findUnique({
+      where: { loan_id: parseInt(loan_id) },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!loan || loan.customer_id !== parseInt(customer_id)) {
+      return next(new CustomError("Loan not found for this customer", 404));
+    }
+
+    // Calculate the total paid amount so far and the remaining amount
+    let totalAmountPaid = loan.total_amount_paid + paid_amount;
+    const remainingAmount = loan.amount_with_interest - totalAmountPaid;
+
+    const recalculatedEMI =
+      remainingAmount / (loan.tenure - (loan.emis_paid_on_time + 1));
+
+    // Update the loan information with the recalculated EMI and total amount paid
+    const updatedLoan = await prisma.loan.update({
+      where: { loan_id: parseInt(loan_id) },
+      data: {
+        monthly_repayment: recalculatedEMI,
+        emis_paid_on_time: {
+          increment: 1,
+        },
+        total_amount_paid: totalAmountPaid,
+      },
+    });
+
+    res.status(200).json({
+      message: "Payment processed successfully",
+      recalculated_installment: recalculatedEMI,
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+module.exports = { checkEligibility, createLoan, viewLoanDetails, makePayment };

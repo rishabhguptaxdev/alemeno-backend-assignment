@@ -5,7 +5,7 @@ require("dotenv").config();
 const dataIngestion = require("./utils/dataIngestion");
 
 // Trigger the data ingestion process
-// dataIngestion();
+dataIngestion();
 
 app.listen(process.env.PORT, () =>
   console.log(`Server is up and running at ${process.env.PORT}`)

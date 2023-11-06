@@ -39,7 +39,7 @@ exports.checkEligibility = BigPromise(async (req, res, next) => {
     }
     // If 30> credit score > 10, approve loans with interest rate>16%
     else if (30 > creditScore && creditScore >= 10) {
-      correctedInterestRate = Math.max(16, interest_rate);
+      correctedInterestRate = Math.max(12, interest_rate);
       approval = interest_rate > 16;
     }
     // If 10> credit score, don’t approve any loans
@@ -61,10 +61,11 @@ exports.checkEligibility = BigPromise(async (req, res, next) => {
       approval = false;
     }
 
-    // Assuming tenure is provided in months
+    // Assuming tenure is provided in months, interest_rate is an annual rate
     const monthlyRate = correctedInterestRate / (12 * 100);
     const compoundFactor = Math.pow(1 + monthlyRate, tenure);
-    const monthlyInstallment = loan_amount * compoundFactor - loan_amount;
+    const monthlyInstallment =
+      (loan_amount * compoundFactor * monthlyRate) / (compoundFactor - 1);
 
     // Response object
     const response = {

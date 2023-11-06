@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `Loan` MODIFY `loan_id` INTEGER NOT NULL AUTO_INCREMENT,
+    MODIFY `emis_paid_on_time` INTEGER NOT NULL DEFAULT 0;
